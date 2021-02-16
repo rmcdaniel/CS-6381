@@ -98,7 +98,10 @@ def merge_logs(log_path, output_name, max_number_of_lines):
     Merge log files in to single output.log up to max number of lines
     '''
     count = 0
-    os.remove(output_name)
+    try:
+        os.remove(output_name)
+    except OSError:
+        pass
     with open(output_name, 'w') as output_file:
         for file_name in glob.glob('{}/h*.log'.format(log_path)):
             with open(file_name, 'r') as input_file:
