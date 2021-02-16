@@ -1,2 +1,2 @@
 [TYPECHECK]
-generated-members=proxy,ROUTER,DEALER,PUB,SUB,XPUB,XSUB
+generated-members=proxy,REQ,REP,PUB,SUB,XPUB,XSUB

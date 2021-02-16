@@ -9,6 +9,7 @@ import struct
 import sys
 import threading
 import uuid
+import zmq
 
 class DirectoryClient():
     '''
@@ -25,32 +26,24 @@ class DirectoryClient():
         '''
         Register a publisher
         '''
-        try:
-            client = socket.socket()
-            client.connect((self.address, self.port))
-            client.sendall('register {} {}'.format(address, port).encode('utf-8'))
-            client.shutdown(socket.SHUT_RDWR)
-            client.close()
-        except OSError:
-            pass
+        context = zmq.Context()
+        client_socket = context.socket(zmq.REQ)
+        client_socket.connect('tcp://{}:{}'.format(self.address, self.port))
+        client_socket.send_string('register {} {}'.format(address, port))
+        client_socket.recv_string()
+        client_socket.close()
 
     def list(self):
         '''
         Get list of publishers
         '''
-        try:
-            client = socket.socket()
-            client.connect((self.address, self.port))
-            client.sendall('list'.encode('utf-8'))
-            try:
-                publishers = dict(json.loads(client.recv(1024).decode('utf-8')))
-            except json.JSONDecodeError:
-                publishers = {}
-            client.shutdown(socket.SHUT_RDWR)
-            client.close()
-        except OSError:
-            publishers = {}
-        return publishers
+        context = zmq.Context()
+        client_socket = context.socket(zmq.REQ)
+        client_socket.connect('tcp://{}:{}'.format(self.address, self.port))
+        client_socket.send_string('list')
+        string = client_socket.recv_string()
+        client_socket.close()
+        return dict(json.loads(string))
 
 class DirectoryServer():
     '''
@@ -68,48 +61,26 @@ class DirectoryServer():
         '''
         Start directory server
         '''
-        lock = threading.Lock()
         services = {}
 
-        def client_thread(client):
-            while not self.stopped.is_set():
-                try:
-                    data = client.recv(1024).decode('utf-8')
-                    if not data:
-                        break
-                    data = data.split()
-                    if data[0] == 'register':
-                        with lock:
-                            services[uuid.uuid4().hex] = [data[1], data[2]]
-                    elif data[0] == 'list':
-                        with lock:
-                            client.sendall(json.dumps(services).encode('utf-8'))
-                except OSError:
-                    pass
-            try:
-                client.shutdown(socket.SHUT_RDWR)
-            except OSError:
-                pass
-            client.close()
-
         def server_thread():
-            server = socket.socket()
-            server.setblocking(0)
-            server.bind(('0.0.0.0', self.port))
-            server.listen(1024)
+            context = zmq.Context()
+            server_socket = context.socket(zmq.REP)
+            server_socket.bind('tcp://*:{}'.format(self.port))
+
+            poller = zmq.Poller()
+            poller.register(server_socket, zmq.POLLIN)
+
             while not self.stopped.is_set():
-                try:
-                    client, _address = server.accept()
-                    client.setblocking(0)
-                    thread = threading.Thread(target=client_thread, args=(client, ))
-                    thread.start()
-                except OSError:
-                    pass
-            try:
-                server.shutdown(socket.SHUT_RDWR)
-            except OSError:
-                pass
-            server.close()
+                sockets = dict(poller.poll(1000))
+                if sockets.get(server_socket) == zmq.POLLIN:
+                    data = server_socket.recv_string().split()
+                    if data[0] == 'register':
+                        services[uuid.uuid4().hex] = [data[1], data[2]]
+                        server_socket.send_string('ok')
+                    elif data[0] == 'list':
+                        server_socket.send_string(json.dumps(services))
+            server_socket.close()
 
         thread = threading.Thread(target=server_thread)
         thread.daemon = True
