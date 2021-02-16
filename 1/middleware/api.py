@@ -3,6 +3,7 @@ Api Module
 '''
 import signal
 import threading
+from .directory import Interfaces
 from .services import broker_service
 from .services import publisher_service
 from .services import subscriber_service
@@ -88,3 +89,9 @@ class Api():
         '''
         for publisher in self.publishers:
             publisher.send_string('{} {}'.format(topic, value))
+
+    def ip(self):
+        '''
+        Get IP address
+        '''
+        return Interfaces(self.stopped).address()

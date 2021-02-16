@@ -38,7 +38,10 @@ class DirectoryClient():
         client = socket.socket()
         client.connect((self.address, self.port))
         client.sendall('list'.encode('utf-8'))
-        publishers = dict(json.loads(client.recv(1024).decode('utf-8')))
+        try:
+            publishers = dict(json.loads(client.recv(1024).decode('utf-8')))
+        except json.JSONDecodeError:
+            publishers = {}
         client.shutdown(socket.SHUT_RDWR)
         client.close()
         return publishers
