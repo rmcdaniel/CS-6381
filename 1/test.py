@@ -40,22 +40,22 @@ if __name__ == '__main__':
         if host.name in options.brokers:
             broker = host
     if options.relay:
-        broker.cmd('python3 {}/application.py broker -r {} 5555 &> {}/{}.log &'.format(path, broker.IP(), path, broker.name))
+        broker.cmd('python3 "{}/application.py" broker -r {} 5555 &> "{}/{}.log" &'.format(path, broker.IP(), path, broker.name))
     else:
-        broker.cmd('python3 {}/application.py broker {} 5555 &> {}/{}.log &'.format(path, broker.IP(), path, broker.name))
+        broker.cmd('python3 "{}/application.py" broker {} 5555 &> "{}/{}.log" &'.format(path, broker.IP(), path, broker.name))
     info('*** Waiting for broker to start\n')
     waitListening(server=broker.IP(), port=5555, timeout=5)
     for host in network.hosts:
         if host.name in options.publishers:
             if options.relay:
-                host.cmd('python3 {}/application.py publisher -r -d {} -t {} {} 5555 &> {}/{}.log &'.format(path, options.delay, options.topics, broker.IP(), path, host.name))
+                host.cmd('python3 "{}/application.py" publisher -r -d {} -t {} {} 5555 &> "{}/{}.log" &'.format(path, options.delay, options.topics, broker.IP(), path, host.name))
             else:
-                host.cmd('python3 {}/application.py publisher -d {} -t {} {} 5555 &> {}/{}.log &'.format(path, options.delay, options.topics, broker.IP(), path, host.name))
+                host.cmd('python3 "{}/application.py" publisher -d {} -t {} {} 5555 &> "{}/{}.log" &'.format(path, options.delay, options.topics, broker.IP(), path, host.name))
         if host.name in options.subscribers:
             if options.relay:
-                host.cmd('python3 -u {}/application.py subscriber -r -t {} {} 5555 &> {}/{}.log &'.format(path, options.topics, broker.IP(), path, host.name))
+                host.cmd('python3 -u "{}/application.py" subscriber -r -t {} {} 5555 &> "{}/{}.log" &'.format(path, options.topics, broker.IP(), path, host.name))
             else:
-                host.cmd('python3 -u {}/application.py subscriber -t {} {} 5555 &> {}/{}.log &'.format(path, options.topics, broker.IP(), path, host.name))
+                host.cmd('python3 -u "{}/application.py" subscriber -t {} {} 5555 &> "{}/{}.log" &'.format(path, options.topics, broker.IP(), path, host.name))
     info('\n')
     info('*** Listing hosts\n')
     for host in network.hosts:
