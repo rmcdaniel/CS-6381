@@ -98,8 +98,10 @@ To produce the graphical representation of the application's end-to-end time mea
 ```
 The subcriber is responsible for producing the time measurements. For scenarios with more than one subscriber, measurements from each sub was collated into one file to facilitate processing.
 
-The graphical representation present within the repo identifies the max amount of time in each of the 10 runs and the average end-to-end measurement across a minimum of 300 measurement inquiries. It allows the viewer to (1) compare the speed of approach 1 to approach 2 for a specific scenario and (2) compare the end-to-end measurements across an increasing network. For clarity the Y-axis expresses time while the X-axis expresses the scenario. An example scenario nomenclature is as follows: 1T_1P_1S or 1T_1P_1S_R.
-	T = Topic
-	P = Publisher
-	S = Subscriber
-	R indicated the presence of the relay broker
+The graphical representation present within the repo identifies the max amount of time in each of the 10 runs and the average end-to-end measurement across a minimum of 300 measurement inquiries. It allows the viewer to (1) compare the speed of approach 1 to approach 2 for a specific scenario and (2) compare the end-to-end measurements across an increasing network. For clarity the Y-axis expresses time while the X-axis expresses the scenario. An example scenario nomenclature is as follows: 
+
+1T_1P_1S or 1T_1P_1S_R.
+- T = Topic
+- P = Publisher
+- S = Subscriber
+- R indicates the presence of the relay broker
