@@ -25,25 +25,31 @@ class DirectoryClient():
         '''
         Register a publisher
         '''
-        client = socket.socket()
-        client.connect((self.address, self.port))
-        client.sendall('register {} {}'.format(address, port).encode('utf-8'))
-        client.shutdown(socket.SHUT_RDWR)
-        client.close()
+        try:
+            client = socket.socket()
+            client.connect((self.address, self.port))
+            client.sendall('register {} {}'.format(address, port).encode('utf-8'))
+            client.shutdown(socket.SHUT_RDWR)
+            client.close()
+        except OSError:
+            pass
 
     def list(self):
         '''
         Get list of publishers
         '''
-        client = socket.socket()
-        client.connect((self.address, self.port))
-        client.sendall('list'.encode('utf-8'))
         try:
-            publishers = dict(json.loads(client.recv(1024).decode('utf-8')))
-        except json.JSONDecodeError:
+            client = socket.socket()
+            client.connect((self.address, self.port))
+            client.sendall('list'.encode('utf-8'))
+            try:
+                publishers = dict(json.loads(client.recv(1024).decode('utf-8')))
+            except json.JSONDecodeError:
+                publishers = {}
+            client.shutdown(socket.SHUT_RDWR)
+            client.close()
+        except OSError:
             publishers = {}
-        client.shutdown(socket.SHUT_RDWR)
-        client.close()
         return publishers
 
 class DirectoryServer():
