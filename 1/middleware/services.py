@@ -37,22 +37,22 @@ def subscriber_service(address, port, relay, topic, callback, stopped):
     '''
     Run subscriber
     '''
-    def subscriber_thread(address, port, relay, topic, callback, stopped):
-        if relay:
-            subscriber_client = subscriber.Subscriber(address, port + 1, topic, callback, stopped)
+    def subscriber_thread(thread_address, thread_port, thread_relay, thread_topic, thread_callback, thread_stopped):
+        if thread_relay:
+            subscriber_client = subscriber.Subscriber(thread_address, thread_port + 1, thread_topic, thread_callback, thread_stopped)
             subscriber_client.start()
         else:
             publishers_list = {}
-            while not stopped.is_set():
-                directory_client = directory.DirectoryClient(address, port)
+            while not thread_stopped.is_set():
+                directory_client = directory.DirectoryClient(thread_address, thread_port)
                 publishers = directory_client.list()
                 for item in publishers.items():
-                    (identifier, (address, publisher_port)) = item
-                    if not identifier in publishers_list:
-                        publishers_list[identifier] = [address, publisher_port]
-                        subscriber_client = subscriber.Subscriber(address, publisher_port, topic, callback, stopped)
+                    (publisher_identifier, (publisher_address, publisher_port)) = item
+                    if not publisher_identifier in publishers_list:
+                        publishers_list[publisher_identifier] = [publisher_address, publisher_port]
+                        subscriber_client = subscriber.Subscriber(publisher_address, publisher_port, thread_topic, thread_callback, thread_stopped)
                         subscriber_client.start()
-            time.sleep(1)
+                time.sleep(1)
 
     thread = threading.Thread(target=subscriber_thread, args=(address, port, relay, topic, callback, stopped))
     thread.daemon = True

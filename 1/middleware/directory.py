@@ -28,6 +28,8 @@ class DirectoryClient():
         client = socket.socket()
         client.connect((self.address, self.port))
         client.sendall('register {} {}'.format(address, port).encode('utf-8'))
+        client.shutdown(socket.SHUT_RDWR)
+        client.close()
 
     def list(self):
         '''
@@ -36,7 +38,10 @@ class DirectoryClient():
         client = socket.socket()
         client.connect((self.address, self.port))
         client.sendall('list'.encode('utf-8'))
-        return dict(json.loads(client.recv(1024).decode('utf-8')))
+        publishers = dict(json.loads(client.recv(1024).decode('utf-8')))
+        client.shutdown(socket.SHUT_RDWR)
+        client.close()
+        return publishers
 
 class DirectoryServer():
     '''
@@ -82,7 +87,7 @@ class DirectoryServer():
             server = socket.socket()
             server.setblocking(0)
             server.bind(('0.0.0.0', self.port))
-            server.listen()
+            server.listen(1024)
             while not self.stopped.is_set():
                 try:
                     client, _address = server.accept()
