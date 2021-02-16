@@ -2,8 +2,10 @@
 Mininet Test
 '''
 import argparse
+import glob
 import os
 import sys
+import time
 
 from mininet.cli import CLI
 from mininet.log import lg, info
@@ -23,9 +25,11 @@ def parse_args():
     Parse command line arguments
     '''
     parser = argparse.ArgumentParser(description='Single Broker-Based Publish-Subscribe Using ZMQ')
+    parser.add_argument('-a', '--automate', type=int, required=False, help='sample number of lines to output.log and exit')
     parser.add_argument('-b', '--brokers', nargs='*', required=True, help='broker host names')
     parser.add_argument('-d', '--delay', type=float, default=1, required=False, help='delay between publisher sends')
     parser.add_argument('-n', '--hosts', type=int, default=2, required=False, help='number of hosts')
+    parser.add_argument('-o', '--output', default='output.log', required=False, help='merged output log file name')
     parser.add_argument('-p', '--publishers', nargs='*', required=True, help='publisher host names')
     parser.add_argument('-r', '--relay', action='store_true', required=False, help='use relay')
     parser.add_argument('-s', '--subscribers', nargs='*', required=True, help='subscriber host names')
@@ -79,6 +83,39 @@ def get_broker(net):
             return node
     return None
 
+def count_log_lines(log_path):
+    '''
+    Count number of lines across all log files
+    '''
+    count = 0
+    for file_name in glob.glob('{}/h*.log'.format(log_path)):
+        with open(file_name, 'r') as input_file:
+            count += sum(1 for line in input_file)
+    return count
+
+def merge_logs(log_path, output_name, max_number_of_lines):
+    '''
+    Merge log files in to single output.log up to max number of lines
+    '''
+    count = 0
+    os.remove(output_name)
+    with open(output_name, 'w') as output_file:
+        for file_name in glob.glob('{}/h*.log'.format(log_path)):
+            with open(file_name, 'r') as input_file:
+                for line in input_file:
+                    measurement = line.split()[-1]
+                    output_file.write(measurement + '\n')
+                    count += 1
+                    if count >= max_number_of_lines:
+                        return
+
+def delete_logs(log_path):
+    '''
+    Delete all host log files
+    '''
+    for file_name in glob.glob('{}/h*.log'.format(log_path)):
+        os.remove(file_name)
+
 if __name__ == '__main__':
     path = get_path()
 
@@ -121,8 +158,19 @@ if __name__ == '__main__':
     for host in network.hosts:
         info(host.name, host.IP(), '\n')
 
-    info('*** Press Ctrl-D to stop network\n')
-
-    CLI(network)
+    if options.automate:
+        info('*** Sampling data\n')
+        while count_log_lines(path) < options.automate:
+            time.sleep(1)
+    else:
+        info('*** Press Ctrl-D to stop network\n')
+        CLI(network)
 
     network.stop()
+
+    if options.automate:
+        info('*** Merging log files to {}\n'.format(options.output))
+        merge_logs(path, options.output, options.automate)
+
+    info('*** Cleaning up log files\n')
+    delete_logs(path)
