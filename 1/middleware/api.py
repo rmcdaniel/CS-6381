@@ -47,7 +47,7 @@ class Api():
         '''
         Register a publisher with the broker
         '''
-        socket = publisher_service(self.address, self.port, self.relay)
+        socket = publisher_service(self.address, self.port, self.relay, self.stopped)
         self.publishers.append(socket)
 
     def register_sub(self, topic):

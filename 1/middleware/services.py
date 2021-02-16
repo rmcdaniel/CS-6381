@@ -21,15 +21,16 @@ def broker_service(address, port, relay, stopped):
         directory_server.start()
     stopped.wait()
 
-def publisher_service(address, port, relay):
+def publisher_service(address, port, relay, stopped):
     '''
     Run publisher
     '''
     publisher_server = publisher.Publisher(address, port, relay)
     (socket, publisher_port) = publisher_server.start()
     if not relay:
+        publisher_address = directory.Interfaces(stopped).address()
         directory_client = directory.DirectoryClient(address, port)
-        directory_client.register(address, publisher_port)
+        directory_client.register(publisher_address, publisher_port)
     return socket
 
 def subscriber_service(address, port, relay, topic, callback, stopped):
