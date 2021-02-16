@@ -72,13 +72,14 @@ class Api():
         Check a topic for new messages
         '''
         with self.lock:
-            for index, subscriber in enumerate(self.subscribers):
-                if subscriber:
-                    string = subscriber[0].split()
-                    if topic == string[0]:
-                        value = string[1:]
-                        self.subscribers[index].pop()
-                        return value
+            for subscriber_index, messages in enumerate(self.subscribers):
+                if messages:
+                    for message_index, message in enumerate(messages):
+                        message_topic = message.split()
+                        if topic == message_topic[0]:
+                            value = message_topic[1:]
+                            self.subscribers[subscriber_index].pop(message_index)
+                            return value
         return None
 
     def publish(self, topic, value):

@@ -22,10 +22,10 @@ class Subscriber():
         '''
         Start the subscriber
         '''
-        def subscriber_thread(socket):
-            socket.setsockopt_string(zmq.SUBSCRIBE, self.topic)
+        def subscriber_thread(thread_socket):
+            thread_socket.setsockopt_string(zmq.SUBSCRIBE, self.topic)
             while not self.stopped.is_set():
-                string = socket.recv_string()
+                string = thread_socket.recv_string()
                 self.callback(string)
 
         context = zmq.Context()
