@@ -37,7 +37,7 @@ def subscriber(options):
             data = api.notify('{}-topic'.format(topic_number))
             if data:
                 (value, nanoseconds) = data
-                print(topic_number, value, time.time_ns() - float(nanoseconds) / 1e9)
+                print(topic_number, value, (time.time_ns() - float(nanoseconds)) / 1e9)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Single Broker-Based Publish-Subscribe Using ZMQ')
