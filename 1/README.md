@@ -86,6 +86,8 @@ Final two arguments should be broker address and broker port. If broker relay op
 
 ### Graphical Data Processing
 
+![End-to-End Time Measurement Graph](dataWgraphs/Assignment1_graph.png)
+
 To produce the graphical representation of the application's end-to-end time measurements, we ran the following scenarios:
 
 ***NOTE: EACH SCENARIO WAS RAN TWICE (ONCE FOR EACH APPROACH) FOR A TOTAL OF 10 RUNS)
