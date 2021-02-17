@@ -176,4 +176,4 @@ if __name__ == '__main__':
         merge_logs(path, options.output, options.automate)
 
     info('*** Cleaning up log files\n')
-    delete_logs(path)
+    # delete_logs(path)
