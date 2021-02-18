@@ -3,10 +3,12 @@ Api Module
 '''
 import signal
 import threading
-from .directory import Interfaces
-from .services import broker_service
-from .services import publisher_service
-from .services import subscriber_service
+
+from .directory import DirectoryClient, DirectoryServer
+from .interfaces import Interfaces
+from .proxy import Proxy
+from .publisher import Publisher
+from .subscriber import Subscriber
 
 class Api():
     '''
@@ -16,82 +18,80 @@ class Api():
         '''
         Contstructor
         '''
-        self.address = address
-        self.port = port
-        self.relay = relay
-        self.publishers = []
-        self.subscribers = []
-        self.lock = threading.Lock()
-        self.stopped = threading.Event()
+        self._address = address
+        self._port = port
+        self._relay = relay
+        self._stopped = threading.Event()
+
+        self._directory = None
+        self._proxy = None
+        self._publisher = None
+        self._subscriber = None
 
         def handler(_signalnum, _frame):
             '''
             Signal handler
             '''
-            self.stopped.set()
+            self._stopped.set()
 
         signal.signal(signal.SIGINT, handler)
+
+        self._directory = None
+        self._proxy = None
 
     def running(self):
         '''
         Check if we should stop running
         '''
-        return not self.stopped.is_set()
+        return not self._stopped.is_set()
 
     def broker(self):
         '''
         Broker service
         '''
-        broker_service(self.address, self.port, self.relay, self.stopped)
+        if self._relay:
+            if not self._proxy:
+                self._proxy = Proxy(self._address, self._port)
+                self._proxy.start()
+        else:
+            if not self._directory:
+                self._directory = DirectoryServer(self._address, self._port, self._stopped)
+                self._directory.start()
+        self._stopped.wait()
 
-    def register_pub(self):
+    def publisher(self):
         '''
         Register a publisher with the broker
         '''
-        socket = publisher_service(self.address, self.port, self.relay, self.stopped)
-        self.publishers.append(socket)
+        self._publisher = Publisher(self._relay, self._stopped)
+        if self._relay:
+            pass
+        else:
+            self._publisher.start(self._address, self._port)
 
-    def register_sub(self, topic):
+    def subscriber(self, topic):
         '''
         Register a subscriber with the broker
         '''
-        buffer = []
-        with self.lock:
-            self.subscribers.append(buffer)
-
-        def callback(string):
-            '''
-            Subscriber callback
-            '''
-            with self.lock:
-                buffer.append(string)
-
-        subscriber_service(self.address, self.port, self.relay, topic, callback, self.stopped)
+        self._subscriber = Subscriber(self._stopped)
+        self._subscriber.subscribe(topic)
+        self._subscriber.start()
+        self._subscriber.connect(self._address, self._port)
 
     def notify(self, topic):
         '''
         Check a topic for new messages
         '''
-        with self.lock:
-            for subscriber_index, messages in enumerate(self.subscribers):
-                if messages:
-                    for message_index, message in enumerate(messages):
-                        message_topic = message.split()
-                        if topic == message_topic[0]:
-                            value = message_topic[1:]
-                            self.subscribers[subscriber_index].pop(message_index)
-                            return value
-        return None
+        return self._subscriber.notify(topic)
 
-    def publish(self, topic, value):
+    def publish(self, topic, message):
         '''
         Publish to a topic
         '''
-        for publisher in self.publishers:
-            publisher.send_string('{} {}'.format(topic, value))
+        self._publisher.publish(topic, message)
 
     def ip(self):
         '''
         Get IP address
         '''
-        return Interfaces(self.stopped).address()
+        return Interfaces(self._stopped).address()

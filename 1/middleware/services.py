@@ -34,7 +34,7 @@ def publisher_service(address, port, relay, stopped):
         directory_client.register(publisher_address, publisher_port)
     return socket
 
-def subscriber_service(address, port, relay, topic, callback, stopped):
+def subscriber_service(address, port, relay, topics, stopped, callback):
     '''
     Run subscriber
     '''
@@ -43,13 +43,20 @@ def subscriber_service(address, port, relay, topic, callback, stopped):
         publishers_list = {}
         subscriber_sockets = []
         poller = zmq.Poller()
+        subscribed_topics = []
 
         while not stopped.is_set():
             if relay:
-                subscriber_client = subscriber.Subscriber(address, port + 1, topic, stopped)
-                subscriber_socket = subscriber_client.start()
-                subscriber_sockets.append(subscriber_socket)
-                poller.register(subscriber_socket, zmq.POLLIN)
+                try:
+                    topic = topics.get(False)
+                except queue.Empty:
+                    topic = None
+                if topic:
+                    subscribed_topics = 
+                    subscriber_client = subscriber.Subscriber(address, port + 1, topic, stopped)
+                    subscriber_socket = subscriber_client.start()
+                    subscriber_sockets.append(subscriber_socket)
+                    poller.register(subscriber_socket, zmq.POLLIN)
             else:
                 if time.time() - last_directory_query >= 1:
                     last_directory_query = time.time()

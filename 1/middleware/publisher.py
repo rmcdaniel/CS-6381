@@ -7,23 +7,32 @@ class Publisher():
     '''
     Publisher Class
     '''
-    def __init__(self, address, port, relay):
+    def __init__(self, relay, stopped):
         '''
         Constructor
         '''
-        self.address = address
-        self.port = port
         self.relay = relay
+        self.stopped = stopped
 
-    def start(self):
+        self.port = None
+        self.started = False
+
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.PUB)
+
+    def publish(self, topic, message):
+        '''
+        Publish to a topic
+        '''
+        self.socket.send_string('{} {}'.format(topic, message))
+
+    def start(self, address=None, port=None):
         '''
         Start the publisher
         '''
-        context = zmq.Context()
-        socket = context.socket(zmq.PUB)
-        if self.relay:
-            port = None
-            socket.connect('tcp://{}:{}'.format(self.address, self.port))
-        else:
-            port = socket.bind_to_random_port('tcp://*')
-        return (socket, port)
+        if not self.started:
+            if self.relay:
+                self.socket.connect('tcp://{}:{}'.format(address, port))
+            else:
+                self.socket.bind('tcp://{}:{}'.format(address, port))
+                # self.port = self.socket.bind_to_random_port('tcp://*')
