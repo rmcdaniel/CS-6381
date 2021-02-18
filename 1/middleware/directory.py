@@ -14,30 +14,30 @@ class DirectoryClient():
         '''
         Constructor
         '''
-        self.address = address
-        self.port = port
+        self._address = address
+        self._port = port
 
     def register(self, address, port):
         '''
         Register a publisher
         '''
         context = zmq.Context()
-        client_socket = context.socket(zmq.REQ)
-        client_socket.connect('tcp://{}:{}'.format(self.address, self.port))
-        client_socket.send_string('register {} {}'.format(address, port))
-        client_socket.recv_string()
-        client_socket.close()
+        socket = context.socket(zmq.REQ)
+        socket.connect('tcp://{}:{}'.format(self._address, self._port))
+        socket.send_string('register {} {}'.format(address, port))
+        socket.recv_string()
+        socket.close()
 
     def list(self):
         '''
         Get list of publishers
         '''
         context = zmq.Context()
-        client_socket = context.socket(zmq.REQ)
-        client_socket.connect('tcp://{}:{}'.format(self.address, self.port))
-        client_socket.send_string('list')
-        string = client_socket.recv_string()
-        client_socket.close()
+        socket = context.socket(zmq.REQ)
+        socket.connect('tcp://{}:{}'.format(self._address, self._port))
+        socket.send_string('list')
+        string = socket.recv_string()
+        socket.close()
         return dict(json.loads(string))
 
 class DirectoryServer():
@@ -48,9 +48,9 @@ class DirectoryServer():
         '''
         Constructor
         '''
-        self.address = address
-        self.port = port
-        self.stopped = stopped
+        self._address = address
+        self._port = port
+        self._stopped = stopped
 
     def start(self):
         '''
@@ -61,12 +61,12 @@ class DirectoryServer():
         def server_thread():
             context = zmq.Context()
             socket = context.socket(zmq.REP)
-            socket.bind('tcp://*:{}'.format(self.port))
+            socket.bind('tcp://*:{}'.format(self._port))
 
             poller = zmq.Poller()
             poller.register(socket, zmq.POLLIN)
 
-            while not self.stopped.is_set():
+            while not self._stopped.is_set():
                 sockets = dict(poller.poll(1000))
                 if sockets.get(socket) == zmq.POLLIN:
                     data = socket.recv_string().split()

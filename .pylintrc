@@ -1,2 +1,4 @@
+[MESSAGES CONTROL]
+disable=line-too-long
 [TYPECHECK]
 generated-members=proxy,REQ,REP,PUB,SUB,XPUB,XSUB

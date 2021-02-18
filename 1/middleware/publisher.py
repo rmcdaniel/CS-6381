@@ -34,6 +34,7 @@ class Publisher():
         Start the publisher
         '''
         if not self._started:
+            self._started = True
             if self._relay:
                 self._socket.connect('tcp://{}:{}'.format(self._address, self._port))
             else:

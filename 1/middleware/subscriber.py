@@ -42,13 +42,13 @@ class Subscriber():
         '''
         Start receiving messages
         '''
-        def directoy_thread():
+        def directory_thread():
             if self._relay:
                 self.connect(self._address, self._port + 1)
             else:
                 publishers = {}
                 client = DirectoryClient(self._address, self._port)
-                while not self._stopped:
+                while not self._stopped.is_set():
                     for publisher in client.list().items():
                         (identifier, (address, port)) = publisher
                         if not identifier in publishers:
@@ -66,7 +66,8 @@ class Subscriber():
                         self._buffer.append(self._socket.recv_string())
 
         if not self._started:
-            thread = threading.Thread(target=directoy_thread)
+            self._started = True
+            thread = threading.Thread(target=directory_thread)
             thread.daemon = True
             thread.start()
 

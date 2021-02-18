@@ -15,23 +15,22 @@ class Interfaces():
         '''
         Constructor
         '''
-        self.stopped = stopped
+        self._stopped = stopped
 
     def all(self):
         '''
         Get all network interfaces
         '''
-        SIOCGIFCONF = 0x8912
         struct_size = 40 if (sys.maxsize > 2**32) else 32
         interface_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         max_number_of_structs = 8
-        while not self.stopped.is_set():
+        while not self._stopped.is_set():
             number_of_bytes = max_number_of_structs * struct_size
             interfaces_bytes = array.array('B')
             for i in range(0, number_of_bytes):
                 interfaces_bytes.append(0)
             packed = struct.pack('iL', number_of_bytes, interfaces_bytes.buffer_info()[0])
-            interface = fcntl.ioctl(interface_socket.fileno(), SIOCGIFCONF, packed)
+            interface = fcntl.ioctl(interface_socket.fileno(), 0x8912, packed)
             unpacked = struct.unpack('iL', interface)[0]
             if unpacked == number_of_bytes:
                 max_number_of_structs *= 2

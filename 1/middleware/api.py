@@ -48,7 +48,7 @@ class Api():
         '''
         if self._relay:
             if not self._proxy:
-                self._proxy = Proxy(self._address, self._port)
+                self._proxy = Proxy(self._port)
                 self._proxy.start()
         else:
             if not self._directory:
