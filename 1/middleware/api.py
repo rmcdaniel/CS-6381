@@ -4,7 +4,7 @@ Api Module
 import signal
 import threading
 
-from .directory import DirectoryClient, DirectoryServer
+from .directory import DirectoryServer
 from .interfaces import Interfaces
 from .proxy import Proxy
 from .publisher import Publisher
@@ -36,9 +36,6 @@ class Api():
 
         signal.signal(signal.SIGINT, handler)
 
-        self._directory = None
-        self._proxy = None
-
     def running(self):
         '''
         Check if we should stop running
@@ -63,20 +60,18 @@ class Api():
         '''
         Register a publisher with the broker
         '''
-        self._publisher = Publisher(self._relay, self._stopped)
-        if self._relay:
-            pass
-        else:
-            self._publisher.start(self._address, self._port)
+        if not self._publisher:
+            self._publisher = Publisher(self._address, self._port, self._relay, self._stopped)
+            self._publisher.start()
 
     def subscriber(self, topic):
         '''
         Register a subscriber with the broker
         '''
-        self._subscriber = Subscriber(self._stopped)
+        if not self._subscriber:
+            self._subscriber = Subscriber(self._address, self._port, self._relay, self._stopped)
+            self._subscriber.start()
         self._subscriber.subscribe(topic)
-        self._subscriber.start()
-        self._subscriber.connect(self._address, self._port)
 
     def notify(self, topic):
         '''
@@ -90,7 +85,7 @@ class Api():
         '''
         self._publisher.publish(topic, message)
 
-    def ip(self):
+    def address(self):
         '''
         Get IP address
         '''
