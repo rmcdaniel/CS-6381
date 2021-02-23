@@ -5,14 +5,7 @@ import argparse
 import signal
 import threading
 
-from kazoo.client import KazooClient
-
-def broker():
-    '''
-    Called when this broker becomes the leader
-    '''
-    print('look at me, I am the captain now')
-    stopped.wait()
+from election import Election
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Single Broker-Based Publish-Subscribe Using ZMQ')
@@ -30,7 +23,7 @@ if __name__ == '__main__':
 
     signal.signal(signal.SIGINT, handler)
 
-    zk = KazooClient(hosts='127.0.0.1:2181')
-    zk.start()
-    election = zk.Election('/brokers', '{}:{}'.format(args.address, args.port))
-    election.run(broker)
+    election = Election('127.0.0.1', 2181, stopped)
+    election.register('brokers', args.address, args.port)
+
+    stopped.wait()
