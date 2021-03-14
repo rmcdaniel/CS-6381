@@ -49,16 +49,16 @@ class Api():
         '''
         Broker service
         '''
-        election = Election('127.0.0.1', 2181, self._stopped)
-        election.register('brokers', self._address, self._port)
+        election = Election(self._address, self._port, self._stopped)
+        election.register('brokers', self.address(), 5555)
         
         if self._relay:
             if not self._proxy:
-                self._proxy = Proxy(self._port)
+                self._proxy = Proxy(5555)
                 self._proxy.start()
         else:
             if not self._directory:
-                self._directory = DirectoryServer(self._address, self._port, self._stopped)
+                self._directory = DirectoryServer(self.address(), 5555, self._stopped)
                 self._directory.start()
         self._stopped.wait()
 
@@ -67,7 +67,7 @@ class Api():
         Register a publisher with the broker
         '''
         if not self._publisher:
-            watch = Watch('127.0.0.1', 2181, 'brokers')
+            watch = Watch(self._address, self._port, 'brokers')
             current_leader = watch.leader().split(":")
             self._publisher = Publisher(current_leader[0], current_leader[1], self._relay, self._stopped)
             self._publisher.start()
@@ -85,7 +85,7 @@ class Api():
         Register a subscriber with the broker
         '''
         if not self._subscriber:
-            watch = Watch('127.0.0.1', 2181, 'brokers')
+            watch = Watch(self._address, self._port, 'brokers')
             current_leader = watch.leader().split(":")
             self._subscriber = Subscriber(current_leader[0], current_leader[1], self._relay, self._stopped)
             self._subscriber.start()
@@ -95,7 +95,7 @@ class Api():
                 if new_leader != None and new_leader != current_leader:
                     current_leader = new_leader
                     self._subscriber.stop()
-                    self._subscriber = Subscriber(current_leader[0], current_leader[1], self._relay, self._stopped)
+                    self._subscriber.connect_to(current_leader[0], current_leader[1])
                     self._subscriber.start()
 
         self._subscriber.subscribe(topic)
