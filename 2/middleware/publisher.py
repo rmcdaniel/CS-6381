@@ -41,3 +41,11 @@ class Publisher():
                 address = Interfaces(self._stopped).address()
                 port = self._socket.bind_to_random_port('tcp://*')
                 DirectoryClient(self._address, self._port).register(address, port)
+    
+    def stop(self):
+        '''
+        closes the publisher zmq connection
+        '''
+        if self._started:
+            self._socket.close()
+            self._started = False

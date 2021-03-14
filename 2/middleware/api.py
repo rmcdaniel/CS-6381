@@ -10,6 +10,9 @@ from .proxy import Proxy
 from .publisher import Publisher
 from .subscriber import Subscriber
 
+from ..zk_ware.election import Election
+from ..zk_ware.watch import Watch
+
 class Api():
     '''
     Api Class
@@ -46,6 +49,9 @@ class Api():
         '''
         Broker service
         '''
+        election = Election('127.0.0.1', 2181, self._stopped)
+        election.register('brokers', self._address, self._port)
+        
         if self._relay:
             if not self._proxy:
                 self._proxy = Proxy(self._port)
@@ -61,16 +67,37 @@ class Api():
         Register a publisher with the broker
         '''
         if not self._publisher:
-            self._publisher = Publisher(self._address, self._port, self._relay, self._stopped)
+            watch = Watch('127.0.0.1', 2181, 'brokers')
+            current_leader = watch.leader().split(":")
+            self._publisher = Publisher(current_leader[0], current_leader[1], self._relay, self._stopped)
             self._publisher.start()
+
+            while not self._stopped.is_set():
+                new_leader = watch.leader()
+                if new_leader != None and new_leader != current_leader:
+                    current_leader = new_leader
+                    self._publisher.stop()
+                    self._publisher = Publisher(current_leader[0], current_leader[1], self._relay, self._stopped)
+                    self._publisher.start()
 
     def subscriber(self, topic):
         '''
         Register a subscriber with the broker
         '''
         if not self._subscriber:
-            self._subscriber = Subscriber(self._address, self._port, self._relay, self._stopped)
+            watch = Watch('127.0.0.1', 2181, 'brokers')
+            current_leader = watch.leader().split(":")
+            self._subscriber = Subscriber(current_leader[0], current_leader[1], self._relay, self._stopped)
             self._subscriber.start()
+
+            while not self._stopped.is_set():
+                new_leader = watch.leader()
+                if new_leader != None and new_leader != current_leader:
+                    current_leader = new_leader
+                    self._subscriber.stop()
+                    self._subscriber = Subscriber(current_leader[0], current_leader[1], self._relay, self._stopped)
+                    self._subscriber.start()
+
         self._subscriber.subscribe(topic)
 
     def notify(self, topic):

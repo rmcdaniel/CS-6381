@@ -87,3 +87,11 @@ class Subscriber():
                     self._buffer.pop(index)
                     return message_body
         return None
+
+    def stop(self):
+        '''
+        closes the subcriber zmq connection
+        '''
+        if self._started:
+            self._socket.close()
+            self._started = False

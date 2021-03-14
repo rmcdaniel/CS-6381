@@ -5,7 +5,7 @@ import argparse
 import signal
 import threading
 
-from election import Election
+from .election import Election
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Single Broker-Based Publish-Subscribe Using ZMQ')
