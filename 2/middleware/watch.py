@@ -1,9 +1,6 @@
 '''
 Election Application
 '''
-import signal
-import threading
-import time
 from kazoo.client import KazooClient
 from kazoo.exceptions import NoNodeError
 
@@ -37,32 +34,8 @@ class Watch():
             self._leader = None
             self._leader_identifier = None
 
-    def leader(self):
-        '''
-        Get current leader
-        '''
-        return self._leader
-
     def identifier(self):
         '''
         Get current leader identifier
         '''
         return self._leader_identifier
-
-if __name__ == '__main__':
-    stopped = threading.Event()
-
-    def handler(_signalnum, _frame):
-        '''
-        Signal handler
-        '''
-        stopped.set()
-
-    signal.signal(signal.SIGINT, handler)
-
-    watch = Watch('127.0.0.1', 2181, 'brokers')
-    while not stopped.is_set():
-        print(watch.identifier())
-        time.sleep(1)
-
-    stopped.wait()

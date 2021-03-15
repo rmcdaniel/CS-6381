@@ -44,12 +44,11 @@ class DirectoryServer():
     '''
     Directory Class
     '''
-    def __init__(self, address, port, stopped):
+    def __init__(self, stopped):
         '''
         Constructor
         '''
-        self._address = address
-        self._port = port
+        self._port = None
         self._stopped = stopped
 
     def start(self):
@@ -61,7 +60,7 @@ class DirectoryServer():
         def server_thread():
             context = zmq.Context()
             socket = context.socket(zmq.REP)
-            socket.bind('tcp://*:{}'.format(self._port))
+            self._port = socket.bind_to_random_port('tcp://*')
 
             poller = zmq.Poller()
             poller.register(socket, zmq.POLLIN)
@@ -80,3 +79,9 @@ class DirectoryServer():
         thread = threading.Thread(target=server_thread)
         thread.daemon = True
         thread.start()
+
+    def port(self):
+        '''
+        Get directory server port
+        '''
+        return self._port

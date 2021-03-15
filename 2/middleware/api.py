@@ -5,13 +5,11 @@ import signal
 import threading
 
 from .directory import DirectoryServer
+from .election import Election
 from .interfaces import Interfaces
 from .proxy import Proxy
 from .publisher import Publisher
 from .subscriber import Subscriber
-
-from ..zk_ware.election import Election
-from ..zk_ware.watch import Watch
 
 class Api():
     '''
@@ -27,6 +25,7 @@ class Api():
         self._stopped = threading.Event()
 
         self._directory = None
+        self._election = None
         self._proxy = None
         self._publisher = None
         self._subscriber = None
@@ -49,55 +48,33 @@ class Api():
         '''
         Broker service
         '''
-        election = Election(self._address, self._port, self._stopped)
-        election.register('brokers', self.address(), 5555)
-        
+        self._election = Election(self._address, self._port, self._stopped)
         if self._relay:
             if not self._proxy:
-                self._proxy = Proxy(5555)
+                self._proxy = Proxy()
                 self._proxy.start()
+                self._election.register('brokers', self.address(), self._proxy.port())
         else:
             if not self._directory:
-                self._directory = DirectoryServer(self.address(), 5555, self._stopped)
+                self._directory = DirectoryServer(self._stopped)
                 self._directory.start()
-        self._stopped.wait()
+                self._election.register('brokers', self.address(), self._directory.port())
 
     def publisher(self):
         '''
         Register a publisher with the broker
         '''
         if not self._publisher:
-            watch = Watch(self._address, self._port, 'brokers')
-            current_leader = watch.leader().split(":")
-            self._publisher = Publisher(current_leader[0], current_leader[1], self._relay, self._stopped)
+            self._publisher = Publisher(self._address, self._port, self._relay, self._stopped)
             self._publisher.start()
-
-            while not self._stopped.is_set():
-                new_leader = watch.leader()
-                if new_leader != None and new_leader != current_leader:
-                    current_leader = new_leader
-                    self._publisher.stop()
-                    self._publisher = Publisher(current_leader[0], current_leader[1], self._relay, self._stopped)
-                    self._publisher.start()
 
     def subscriber(self, topic):
         '''
         Register a subscriber with the broker
         '''
         if not self._subscriber:
-            watch = Watch(self._address, self._port, 'brokers')
-            current_leader = watch.leader().split(":")
-            self._subscriber = Subscriber(current_leader[0], current_leader[1], self._relay, self._stopped)
+            self._subscriber = Subscriber(self._address, self._port, self._relay, self._stopped)
             self._subscriber.start()
-
-            while not self._stopped.is_set():
-                new_leader = watch.leader()
-                if new_leader != None and new_leader != current_leader:
-                    current_leader = new_leader
-                    self._subscriber.stop()
-                    self._subscriber.connect_to(current_leader[0], current_leader[1])
-                    self._subscriber.start()
-
         self._subscriber.subscribe(topic)
 
     def notify(self, topic):

@@ -8,11 +8,11 @@ class Proxy():
     '''
     Proxy Class
     '''
-    def __init__(self, port):
+    def __init__(self):
         '''
         Constructor
         '''
-        self._port = port
+        self._port = None
 
     def start(self):
         '''
@@ -22,10 +22,16 @@ class Proxy():
             context = zmq.Context()
             xpub = context.socket(zmq.XPUB)
             xsub = context.socket(zmq.XSUB)
-            xsub.bind('tcp://*:{}'.format(self._port))
+            self._port = xsub.bind_to_random_port('tcp://*')
             xpub.bind('tcp://*:{}'.format(self._port + 1))
             zmq.proxy(xsub, xpub)
 
         thread = threading.Thread(target=proxy_thread)
         thread.daemon = True
         thread.start()
+
+    def port(self):
+        '''
+        Get proxy port
+        '''
+        return self._port

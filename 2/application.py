@@ -48,21 +48,21 @@ if __name__ == '__main__':
 
     broker_parser = subparsers.add_parser('broker', help='broker options')
     broker_parser.add_argument('-r', '--relay', action='store_true', required=False, help='enable relay')
-    broker_parser.add_argument('address', help='broker address')
-    broker_parser.add_argument('port', type=int, help='broker port')
+    broker_parser.add_argument('address', help='zookeeper address')
+    broker_parser.add_argument('port', type=int, help='zookeeper port')
 
     publisher_parser = subparsers.add_parser('publisher', help='publisher options')
     publisher_parser.add_argument('-d', '--delay', type=float, default=1, required=False, help='time to wait between sends')
     publisher_parser.add_argument('-r', '--relay', action='store_true', required=False, help='use relay')
     publisher_parser.add_argument('-t', '--topics', type=int, default=1, required=False, help='number of topics')
-    publisher_parser.add_argument('address', help='broker address')
-    publisher_parser.add_argument('port', type=int, help='broker port')
+    publisher_parser.add_argument('address', help='zookeeper address')
+    publisher_parser.add_argument('port', type=int, help='zookeeper port')
 
     subscriber_parser = subparsers.add_parser('subscriber', help='subscriber options')
     subscriber_parser.add_argument('-r', '--relay', action='store_true', required=False, help='use relay')
     subscriber_parser.add_argument('-t', '--topics', type=int, default=1, required=False, help='number of topics')
-    subscriber_parser.add_argument('address', help='broker address')
-    subscriber_parser.add_argument('port', type=int, help='broker port')
+    subscriber_parser.add_argument('address', help='zookeeper address')
+    subscriber_parser.add_argument('port', type=int, help='zookeeper port')
 
     args = parser.parse_args()
 

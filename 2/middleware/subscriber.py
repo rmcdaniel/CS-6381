@@ -6,6 +6,7 @@ import time
 import zmq
 
 from .directory import DirectoryClient
+from .watch import Watch
 
 class Subscriber():
     '''
@@ -25,6 +26,7 @@ class Subscriber():
         self._started = False
 
         self._socket = zmq.Context().socket(zmq.SUB)
+        self._watch = Watch(self._address, self._port, 'brokers')
 
     def connect(self, address, port):
         '''
@@ -43,18 +45,24 @@ class Subscriber():
         Start receiving messages
         '''
         def directory_thread():
-            if self._relay:
-                self.connect(self._address, self._port + 1)
-            else:
-                publishers = {}
-                client = DirectoryClient(self._address, self._port)
-                while not self._stopped.is_set():
-                    for publisher in client.list().items():
-                        (identifier, (address, port)) = publisher
-                        if not identifier in publishers:
-                            publishers[identifier] = [address, port]
-                            self.connect(address, port)
-                    time.sleep(1)
+            current_leader = None
+            while not self._stopped.is_set():
+                new_leader = self._watch.identifier()
+                if current_leader != new_leader and not new_leader is None:
+                    current_leader = new_leader
+                    (broker_address, broker_port) = current_leader.split(':')
+                    if self._relay:
+                        self.connect(broker_address, int(broker_port) + 1)
+                    else:
+                        publishers = {}
+                        client = DirectoryClient(broker_address, broker_port)
+                        while not self._stopped.is_set() and current_leader == self._watch.identifier():
+                            for publisher in client.list().items():
+                                (identifier, (address, port)) = publisher
+                                if not identifier in publishers:
+                                    publishers[identifier] = [address, port]
+                                    self.connect(address, port)
+                            time.sleep(1)
 
         def subscriber_thread():
             poller = zmq.Poller()
@@ -87,11 +95,3 @@ class Subscriber():
                     self._buffer.pop(index)
                     return message_body
         return None
-
-    def stop(self):
-        '''
-        closes the subcriber zmq connection
-        '''
-        if self._started:
-            self._socket.close()
-            self._started = False

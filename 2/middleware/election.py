@@ -31,5 +31,4 @@ class Election():
         '''
         Called when this contender becomes the leader
         '''
-        print(self._identifier)
         self._stopped.wait()
