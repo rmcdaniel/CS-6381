@@ -24,7 +24,7 @@ def parse_args():
     '''
     Parse command line arguments
     '''
-    parser = argparse.ArgumentParser(description='Single Broker-Based Publish-Subscribe Using ZMQ')
+    parser = argparse.ArgumentParser(description='Fault-Tolerant Broker-Based Publish-Subscribe Using ZMQ')
     parser.add_argument('-a', '--automate', type=int, required=False, help='sample number of lines to output.log and exit')
     parser.add_argument('-b', '--brokers', nargs='*', required=True, help='broker host names')
     parser.add_argument('-d', '--delay', type=float, default=1, required=False, help='delay between publisher sends')
@@ -34,12 +34,14 @@ def parse_args():
     parser.add_argument('-r', '--relay', action='store_true', required=False, help='use relay')
     parser.add_argument('-s', '--subscribers', nargs='*', required=True, help='subscriber host names')
     parser.add_argument('-t', '--topics', type=int, default=1, required=False, help='number of topics')
+    parser.add_argument('-z', '--zookeepers', nargs='*', required=True, help='zookeeper host names')
     args = parser.parse_args()
+    args.zookeepers = parse_host_ranges(args.zookeepers)
     args.brokers = parse_host_ranges(args.brokers)
     args.publishers = parse_host_ranges(args.publishers)
     args.subscribers = parse_host_ranges(args.subscribers)
-    if len(args.brokers) > 1:
-        print('Multiple brokers not supported for this assignment')
+    if len(args.zookeepers) > 1:
+        print('Multiple zookeepers not supported for this assignment')
         sys.exit(0)
     return args
 
@@ -74,12 +76,12 @@ def start_network():
         root.cmd('route add -net {} dev {}'.format(route, interface))
     return net
 
-def get_broker(net):
+def get_zookeeper(net):
     '''
-    Get broker from list of hosts
+    Get zookeeper from list of hosts
     '''
     for node in net.hosts:
-        if node.name in options.brokers:
+        if node.name in options.zookeepers:
             return node
     return None
 
@@ -95,7 +97,7 @@ def count_log_lines(log_path):
 
 def merge_logs(log_path, output_name, max_number_of_lines):
     '''
-    Merge log files in to single output.log up to max number of lines
+    Merge log files into single output.log up to max number of lines
     '''
     count = 0
     try:
@@ -126,35 +128,37 @@ if __name__ == '__main__':
 
     network = start_network()
 
-    broker = get_broker(network)
+    zookeeper = get_zookeeper(network)
 
-    if broker is None:
+    if zookeeper is None:
         network.stop()
-        print('Broker not found')
+        print('Zookeeper not found')
         sys.exit(0)
 
-    info('*** Waiting for broker to start\n')
+    info('*** Waiting for zookeeper to start\n')
 
-    if options.relay:
-        broker.cmd('python3 -u "{}/application.py" broker -r {} 5555 &> "{}/{}.log" &'.format(path, broker.IP(), path, broker.name))
-    else:
-        broker.cmd('python3 -u "{}/application.py" broker {} 5555 &> "{}/{}.log" &'.format(path, broker.IP(), path, broker.name))
+    zookeeper.cmd('/opt/zookeeper/bin/zkServer.sh start')
 
-    waitListening(server=broker.IP(), port=5555, timeout=5)
+    waitListening(server=zookeeper.IP(), port=2181, timeout=5)
 
     info('\n')
 
     for host in network.hosts:
+        if host.name in options.brokers:
+            if options.relay:
+                host.cmd('python3 -u "{}/application.py" broker -r {} 2181 &> "{}/{}.log" &'.format(path, zookeeper.IP(), path, host.name))
+            else:
+                host.cmd('python3 -u "{}/application.py" broker {} 2181 &> "{}/{}.log" &'.format(path, zookeeper.IP(), path, host.name))
         if host.name in options.publishers:
             if options.relay:
-                host.cmd('python3 -u "{}/application.py" publisher -r -d {} -t {} {} 5555 &> "{}/{}.log" &'.format(path, options.delay, options.topics, broker.IP(), path, host.name))
+                host.cmd('python3 -u "{}/application.py" publisher -r -d {} -t {} {} 2181 &> "{}/{}.log" &'.format(path, options.delay, options.topics, zookeeper.IP(), path, host.name))
             else:
-                host.cmd('python3 -u "{}/application.py" publisher -d {} -t {} {} 5555 &> "{}/{}.log" &'.format(path, options.delay, options.topics, broker.IP(), path, host.name))
+                host.cmd('python3 -u "{}/application.py" publisher -d {} -t {} {} 2181 &> "{}/{}.log" &'.format(path, options.delay, options.topics, zookeeper.IP(), path, host.name))
         if host.name in options.subscribers:
             if options.relay:
-                host.cmd('python3 -u "{}/application.py" subscriber -r -t {} {} 5555 &> "{}/{}.log" &'.format(path, options.topics, broker.IP(), path, host.name))
+                host.cmd('python3 -u "{}/application.py" subscriber -r -t {} {} 2181 &> "{}/{}.log" &'.format(path, options.topics, zookeeper.IP(), path, host.name))
             else:
-                host.cmd('python3 -u "{}/application.py" subscriber -t {} {} 5555 &> "{}/{}.log" &'.format(path, options.topics, broker.IP(), path, host.name))
+                host.cmd('python3 -u "{}/application.py" subscriber -t {} {} 2181 &> "{}/{}.log" &'.format(path, options.topics, zookeeper.IP(), path, host.name))
 
     info('*** Listing hosts\n')
 
@@ -168,6 +172,8 @@ if __name__ == '__main__':
     else:
         info('*** Press Ctrl-D to stop network\n')
         CLI(network)
+
+    zookeeper.cmd('/opt/zookeeper/bin/zkServer.sh stop')
 
     network.stop()
 

@@ -1,7 +1,7 @@
 # CS 6381
 
-## Assignment 1
-Single Broker-Based Publish-Subscribe Using ZMQ and Mininet
+## Assignment 2
+Fault-Tolerant Broker-Based Publish-Subscribe Using ZMQ, Mininet and Zookeeper
 
 ### Testing
 
@@ -10,13 +10,13 @@ Run `sudo python3 test.py` with the appropriate options. Two common examples for
 Approach 1 (publishers talk directly to subscribers, broker only makes introduction)
 
 ```
-sudo python3 test.py --delay 1 --topics 1 --hosts 2 --brokers h1 --publishers h1 --subscribers h2
+sudo python3 test.py --delay 1 --topics 1 --hosts 2 --zookeepers h1 --brokers h1 --publishers h1 --subscribers h2
 ```
 
 Approach 2 (publishers relay everything through broker)
 
 ```
-sudo python3 test.py --relay --delay 1 --topics 1 --hosts 2 --brokers h1 --publishers h1 --subscribers h2
+sudo python3 test.py --relay --delay 1 --topics 1 --hosts 2 --zookeepers h1 --brokers h1 --publishers h1 --subscribers h2
 ```
 
 ### test.py options
@@ -34,34 +34,36 @@ sudo python3 test.py --relay --delay 1 --topics 1 --hosts 2 --brokers h1 --publi
 
 --hosts - the number of hosts to create in the mininet tree topology
 
---brokers - the list of broker hosts, only the first one in the list is used for this assignment, all others are ignored (single broker)
+--zookeepers - the list of zookeeper hosts, only the first one in the list is used for this assignment, all others are ignored (no clustering)
 
---publishers - list of publisher hosts, must make sense based on the number of hosts specified with the --hosts flag i.e. don't list h3 as one of the hosts if you specified --hosts 2 because only h1 and h2 hosts will exist
+--brokers - the list of broker hosts, must make sense based on the number of hosts specified with the --hosts flag i.e. don't list h3 as one of the hosts if you specified --hosts 2 because only h1 and h2 hosts will exist
 
---subscriber - list of subscriber hosts, must also make sense based on the note above for publishers
+--publishers - list of publisher hosts, must also make sense based on the note above for brokers
+
+--subscriber - list of subscriber hosts, must also make sense based on the note above for brokers
 ```
 *** Example with all options:
 
-`sudo python3 test.py --automate 1000 --output 5pub-5sub-relay.log --relay --delay 0.01 --topics 1 --hosts 11 --brokers h11 --publishers h1-h5 --subscribers h6-h10`
+`sudo python3 test.py --automate 1000 --output 5pub-5sub-relay.log --relay --delay 0.01 --topics 1 --hosts 12 --zookeepers h11 --brokers h11-h12 --publishers h1-h5 --subscribers h6-h10`
 
 ### Application
 
-Run `python3 application.py` with the appropiate options. Two common examples given below.
+Run `python3 application.py` with the appropiate options. Two common examples given below. Zookeeper must already be running on port 2181.
 
 Approach 1 (publishers talk directly to subscribers, broker only makes introduction)
 
 ```
-python3 application.py broker 127.0.0.1 5555
-python3 application.py publisher --delay 1 --topics 1 127.0.0.1 5555
-python3 application.py subscriber --topics 1 127.0.0.1 5555
+python3 application.py broker 127.0.0.1 2181
+python3 application.py publisher --delay 1 --topics 1 127.0.0.1 2181
+python3 application.py subscriber --topics 1 127.0.0.1 2181
 ```
 
 Approach 2 (publishers relay everything through broker)
 
 ```
-python3 application.py broker --relay 127.0.0.1 5555
-python3 application.py publisher --relay --delay 1 --topics 1 127.0.0.1 5555
-python3 application.py subscriber --relay --topics 1 127.0.0.1 5555
+python3 application.py broker --relay 127.0.0.1 2181
+python3 application.py publisher --relay --delay 1 --topics 1 127.0.0.1 2181
+python3 application.py subscriber --relay --topics 1 127.0.0.1 2181
 ```
 
 ### application.py options
@@ -82,4 +84,4 @@ subscriber
 --topics - the number of topics that subscribers and publishers will use (only available for publisher and subscriber)
 ```
 
-The final two arguments should be broker address and port. If broker relay option is specified then broker will also open a second sequential port i.e. if you specify relay and broker port = 5555 then broker will listen on both port 5555 and 5556.
+The final two arguments should be zookeeper address and port.
