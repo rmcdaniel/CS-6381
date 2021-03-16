@@ -143,17 +143,30 @@ if __name__ == '__main__':
 
     info('\n')
 
+    zookeeper.cmd('/opt/zookeeper/bin/zkCli.sh deleteall /brokers')
+    zookeeper.cmd('/opt/zookeeper/bin/zkCli.sh create /brokers')
+
+    info('*** Starting brokers\n')
+
     for host in network.hosts:
         if host.name in options.brokers:
             if options.relay:
                 host.cmd('python3 -u "{}/application.py" broker -r {} 2181 &> "{}/{}.log" &'.format(path, zookeeper.IP(), path, host.name))
             else:
                 host.cmd('python3 -u "{}/application.py" broker {} 2181 &> "{}/{}.log" &'.format(path, zookeeper.IP(), path, host.name))
+
+    info('*** Starting publishers\n')
+
+    for host in network.hosts:
         if host.name in options.publishers:
             if options.relay:
                 host.cmd('python3 -u "{}/application.py" publisher -r -d {} -t {} {} 2181 &> "{}/{}.log" &'.format(path, options.delay, options.topics, zookeeper.IP(), path, host.name))
             else:
                 host.cmd('python3 -u "{}/application.py" publisher -d {} -t {} {} 2181 &> "{}/{}.log" &'.format(path, options.delay, options.topics, zookeeper.IP(), path, host.name))
+
+    info('*** Starting subscribers\n')
+
+    for host in network.hosts:
         if host.name in options.subscribers:
             if options.relay:
                 host.cmd('python3 -u "{}/application.py" subscriber -r -t {} {} 2181 &> "{}/{}.log" &'.format(path, options.topics, zookeeper.IP(), path, host.name))
@@ -173,13 +186,14 @@ if __name__ == '__main__':
         info('*** Press Ctrl-D to stop network\n')
         CLI(network)
 
-    zookeeper.cmd('/opt/zookeeper/bin/zkServer.sh stop')
-
-    network.stop()
-
     if options.automate:
         info('*** Merging log files to {}\n'.format(options.output))
         merge_logs(path, options.output, options.automate)
+
+    zookeeper.cmd('/opt/zookeeper/bin/zkCli.sh deleteall /brokers')
+    zookeeper.cmd('/opt/zookeeper/bin/zkServer.sh stop')
+
+    network.stop()
 
     info('*** Cleaning up log files\n')
     delete_logs(path)
