@@ -85,3 +85,18 @@ subscriber
 ```
 
 The final two arguments should be zookeeper address and port.
+
+### Graphical Data Processing
+
+![End-to-End Time Measurement Graph](dataWgraph/Assignment2_graph.png)
+
+To produce the graphical representation of the application's end-to-end time measurements, we ran the following scenarios:
+
+***NOTE: EACH SCENARIO WAS RAN TWICE (ONCE FOR EACH APPROACH) FOR A TOTAL OF 10 RUNS)
+```  
+1. 5Broker, 5Publisher, 5Subscriber
+2. 5Broker, 10Publisher, 10Subscriber
+3. 5Broker, 15Publisher, 15Subscriber
+4. 5Broker, 20Publisher, 20Subscriber
+5. 5Broker, 30Publisher, 30Subscriber
+
