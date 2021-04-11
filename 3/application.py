@@ -20,11 +20,12 @@ def publisher(options):
     '''
     api = middleware.Api(options.address, options.port)
     api.publisher()
+    ownership = random.randint(1, 10)
     address = api.address()
     sequence = 0
     while api.running():
         for topic_number in range(options.topics):
-            api.publish('{}-topic'.format(topic_number), '{} {} {} {}'.format(address, sequence, random.random(), time.time_ns()))
+            api.publish('{}-topic'.format(topic_number), '{} {} {} {} {}'.format(ownership, address, sequence, random.random(), time.time_ns()))
             sequence += 1
         time.sleep(options.delay)
 
@@ -39,8 +40,8 @@ def subscriber(options):
         for topic_number in range(options.topics):
             data = api.notify('{}-topic'.format(topic_number))
             if data:
-                (address, sequence, value, nanoseconds) = data
-                print(topic_number, address, sequence, value, (time.time_ns() - float(nanoseconds)) / 1e9)
+                (ownership, address, sequence, value, nanoseconds) = data
+                print(topic_number, ownership, address, sequence, value, (time.time_ns() - float(nanoseconds)) / 1e9)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Single Broker-Based Publish-Subscribe Using ZMQ')
