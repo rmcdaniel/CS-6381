@@ -1,17 +1,13 @@
 # CS 6381
 
-## Assignment 2
-Fault-Tolerant Broker-Based Publish-Subscribe Using ZMQ, Mininet and Zookeeper
+## Assignment 3
+Fault-Tolerant Broker-Based Publish-Subscribe With QoS Using ZMQ, Mininet and Zookeeper
 
 ### Testing
 
 Run `sudo python3 test.py` with the appropriate options. Two common examples for each of the approaches listed below. The `test.py` script will create a mininet network and run the `application.py` script on the appropiate hosts and output from the hosts will be logged into the same directory e.g. `h1.log` and `h2.log` etc.
 
-Approach 1 (publishers talk directly to subscribers, broker only makes introduction)
-
-```
-sudo python3 test.py --delay 1 --topics 1 --hosts 2 --zookeepers h1 --brokers h1 --publishers h1 --subscribers h2
-```
+This assignment only supports approach 2 per the professor's instructions.
 
 Approach 2 (publishers relay everything through broker)
 
@@ -26,8 +22,6 @@ sudo python3 test.py --relay --delay 1 --topics 1 --hosts 2 --zookeepers h1 --br
 
 --output - the generated file name desired for the recorded end-to-end messages
  
---relay - if this flag is present then publishers relay everything through the broker otherwise the publishers talk directly to the subscribers
-
 --delay - the delay in seconds that publishers wait between sending data, can be fraction of a second or whole seconds e.g. 0.5 for half a second
 
 --topics - the number of topics that subscribers and publishers will use
@@ -50,13 +44,7 @@ sudo python3 test.py --relay --delay 1 --topics 1 --hosts 2 --zookeepers h1 --br
 
 Run `python3 application.py` with the appropiate options. Two common examples given below. Zookeeper must already be running on port 2181.
 
-Approach 1 (publishers talk directly to subscribers, broker only makes introduction)
-
-```
-python3 application.py broker 127.0.0.1 2181
-python3 application.py publisher --delay 1 --topics 1 127.0.0.1 2181
-python3 application.py subscriber --topics 1 127.0.0.1 2181
-```
+This assignment only supports approach 2 per the professor's instructions.
 
 Approach 2 (publishers relay everything through broker)
 
@@ -77,8 +65,6 @@ subscriber
 ```
 
 ```
---relay - if this flag is present then publishers relay everything through the broker otherwise the publishers talk directly to the subscribers (available for broker, publisher and subscriber, all must use relay or not for things to work, cannot mix and match)
-
 --delay - the delay in seconds that publishers wait between sending data, can be fraction of a second or whole seconds e.g. 0.5 for half a second (only available for publisher)
 
 --topics - the number of topics that subscribers and publishers will use (only available for publisher and subscriber)

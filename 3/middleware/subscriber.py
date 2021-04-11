@@ -82,7 +82,7 @@ class Subscriber():
             thread.daemon = True
             thread.start()
 
-    def notify(self, topic, history=2):
+    def notify(self, topic, history):
         '''
         Check if topic has a message and return it
         '''
@@ -118,7 +118,7 @@ class Subscriber():
                     except KeyError:
                         self._cache[topic] = ownership
                         cached = self._cache[topic]
-                    message_body = message_topic[1:]
+                    message_body = message_topic[2:]
                     self._buffer.pop(index - offset)
                     offset += 1
                     if ownership >= cached:

@@ -25,7 +25,7 @@ class Publisher():
         self._socket = zmq.Context().socket(zmq.PUB)
         self._watch = Watch(self._address, self._port)
 
-    def publish(self, topic, message, history=5):
+    def publish(self, topic, ownership, message, history):
         '''
         Publish to a topic
         '''
@@ -38,7 +38,7 @@ class Publisher():
         messages.append(message)
         self._history[topic] = messages
         for saved_message in messages:
-            self._socket.send_string('{} {}'.format(topic, saved_message))
+            self._socket.send_string('{} {} {}'.format(topic, ownership, saved_message))
 
     def start(self):
         '''

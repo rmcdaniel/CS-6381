@@ -68,17 +68,17 @@ class Api():
             self._subscriber.start()
         self._subscriber.subscribe(topic)
 
-    def notify(self, topic):
+    def notify(self, topic, history):
         '''
         Check a topic for new messages
         '''
-        return self._subscriber.notify(topic)
+        return self._subscriber.notify(topic, history)
 
-    def publish(self, topic, message):
+    def publish(self, topic, ownership, message, history):
         '''
         Publish to a topic
         '''
-        self._publisher.publish(topic, message)
+        self._publisher.publish(topic, ownership, message, history)
 
     def address(self):
         '''
