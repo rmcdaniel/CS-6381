@@ -36,6 +36,8 @@ class Interfaces():
                 max_number_of_structs *= 2
             else:
                 break
+        if self._stopped.is_set():
+            return []
         interfaces_strings = interfaces_bytes.tostring()
         interfaces = []
         for i in range(0, unpacked, struct_size):

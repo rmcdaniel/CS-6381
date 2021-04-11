@@ -2,10 +2,12 @@
 Subscriber Module
 '''
 import threading
+import time
 import zmq
 
 from .cache import Cache
 from .election import Election
+from .hash import Hash
 from .interfaces import Interfaces
 from .watch import Watch
 
@@ -24,6 +26,7 @@ class Subscriber():
         self._buffer = []
         self._cache = Cache()
         self._election = None
+        self._history = []
         self._lock = threading.Lock()
         self._started = False
 
@@ -79,12 +82,34 @@ class Subscriber():
             thread.daemon = True
             thread.start()
 
-    def notify(self, topic):
+    def notify(self, topic, history=2):
         '''
         Check if topic has a message and return it
         '''
         with self._lock:
-            for index, message in enumerate(self._buffer):
+            topics = {}
+            for index, message in enumerate(self._buffer[:]):
+                message_topic = message.split()
+                try:
+                    message_count = topics[message_topic[0]]
+                except KeyError:
+                    message_count = 0
+                message_count += 1
+                topics[message_topic[0]] = message_count
+            offset = 0
+            for index, message in enumerate(self._buffer[:]):
+                message_topic = message.split()
+                try:
+                    message_count = topics[message_topic[0]]
+                except KeyError:
+                    message_count = 0
+                if message_count > history:
+                    self._buffer.pop(index - offset)
+                    offset += 1
+                    message_count -= 1
+                topics[message_topic[0]] = message_count
+            offset = 0
+            for index, message in enumerate(self._buffer[:]):
                 message_topic = message.split()
                 if topic == message_topic[0]:
                     ownership = message_topic[1:2]
@@ -94,8 +119,12 @@ class Subscriber():
                         self._cache[topic] = ownership
                         cached = self._cache[topic]
                     message_body = message_topic[1:]
-                    self._buffer.pop(index)
+                    self._buffer.pop(index - offset)
+                    offset += 1
                     if ownership >= cached:
                         self._cache[topic] = ownership
-                        return message_body
+                        md5 = Hash.hash(message)
+                        if not md5 in self._history:
+                            self._history.append(md5)
+                            return message_body
         return None

@@ -19,16 +19,26 @@ class Publisher():
         self._port = port
         self._stopped = stopped
 
+        self._history = {}
         self._started = False
 
         self._socket = zmq.Context().socket(zmq.PUB)
         self._watch = Watch(self._address, self._port)
 
-    def publish(self, topic, message):
+    def publish(self, topic, message, history=5):
         '''
         Publish to a topic
         '''
-        self._socket.send_string('{} {}'.format(topic, message))
+        try:
+            messages = self._history[topic]
+        except KeyError:
+            messages = []
+        if len(messages) >= history:
+            messages.pop(0)
+        messages.append(message)
+        self._history[topic] = messages
+        for saved_message in messages:
+            self._socket.send_string('{} {}'.format(topic, saved_message))
 
     def start(self):
         '''

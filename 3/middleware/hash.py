@@ -7,11 +7,12 @@ class Hash():
         self._keys = []
         self._values = {}
 
-    def hash(self, key):
+    @staticmethod
+    def hash(key):
         return int(hashlib.md5(key.encode('utf-8')).hexdigest(), 16)
 
     def hashes(self, key):
-        return (self.hash('{}:{}'.format(key, i))
+        return (Hash.hash('{}:{}'.format(key, i))
             for i in range(self._servers))
 
     def values(self):
@@ -31,7 +32,7 @@ class Hash():
             del self._keys[index]
 
     def __getitem__(self, key):
-        _hash = self.hash(key)
+        _hash = Hash.hash(key)
         start = bisect.bisect(self._keys, _hash)
         if start == len(self._keys):
             start = 0
