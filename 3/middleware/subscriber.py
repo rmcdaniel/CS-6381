@@ -59,7 +59,7 @@ class Subscriber():
                         self._socket.disconnect('tcp://{}:{}'.format(address, int(port) + 1))
                     current_broker = new_broker
                     (address, port) = current_broker.split(':')
-                    print('Using broker at {}:{}'.format(address, int(port) + 1))
+                    # print('Using broker at {}:{}'.format(address, int(port) + 1))
                     self._socket.connect('tcp://{}:{}'.format(address, int(port) + 1))
 
         def subscriber_thread():
