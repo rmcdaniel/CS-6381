@@ -1,9 +1,12 @@
 '''
 Election Application
 '''
-from .hash import Hash
+from threading import Lock
+
 from kazoo.client import KazooClient
 from kazoo.exceptions import NoNodeError
+
+from .hash import Hash
 
 class Watch():
     '''
@@ -18,6 +21,7 @@ class Watch():
         self._threshold = 1
 
         self._hash = None
+        self._lock = Lock()
 
         self._zookeeper = KazooClient(hosts='{}:{}'.format(address, port))
         self._zookeeper.start()
@@ -36,26 +40,29 @@ class Watch():
             count = (len(self._zookeeper.get_children('/{}'.format(self._subscribers))) // self._threshold) + 1
             brokers.sort(key=lambda broker: int(broker[-10:]))
             brokers = brokers[:count]
-            self._hash = Hash(len(brokers))
-            for broker in brokers:
-                try:
-                    (identifier, _status) = self._zookeeper.get('/{}/{}'.format(self._brokers, broker))
-                    self._hash[broker] = identifier
-                except NoNodeError:
-                    pass
+            with self._lock:
+                self._hash = Hash(len(brokers))
+                for broker in brokers:
+                    try:
+                        (identifier, _status) = self._zookeeper.get('/{}/{}'.format(self._brokers, broker))
+                        self._hash[broker] = identifier
+                    except NoNodeError:
+                        pass
 
     def all(self):
         '''
         Get all identifiers
         '''
-        if self._hash and len(self._hash.values()) != 0:
-            return list(map(lambda value: value.decode('utf-8'), self._hash.values().values()))
-        return {}
+        with self._lock:
+            if self._hash and len(self._hash.values()) != 0:
+                return list(map(lambda value: value.decode('utf-8'), self._hash.values().values()))
+            return {}
 
     def identifier(self, key):
         '''
         Get identifier for key
         '''
-        if self._hash and len(self._hash.values()) != 0:
-            return self._hash[key].decode('utf-8')
-        return None
+        with self._lock:
+            if self._hash and len(self._hash.values()) != 0:
+                return self._hash[key].decode('utf-8')
+            return None

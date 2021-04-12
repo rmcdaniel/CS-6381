@@ -1,8 +1,9 @@
 '''
 Subscriber Module
 '''
+import random
+import string
 import threading
-import time
 import zmq
 
 from .cache import Cache
@@ -48,15 +49,17 @@ class Subscriber():
             self._election.register('subscribers', '', '')
 
         def watch_thread():
+            identifier = ''.join(random.choices(string.printable, k=16))
             current_broker = None
             while not self._stopped.is_set():
-                new_broker = self._watch.identifier(Interfaces(self._stopped).address())
+                new_broker = self._watch.identifier(identifier)
                 if current_broker != new_broker and not new_broker is None:
                     if not current_broker is None:
                         (address, port) = current_broker.split(':')
                         self._socket.disconnect('tcp://{}:{}'.format(address, int(port) + 1))
                     current_broker = new_broker
                     (address, port) = current_broker.split(':')
+                    print('Using broker at {}:{}'.format(address, int(port) + 1))
                     self._socket.connect('tcp://{}:{}'.format(address, int(port) + 1))
 
         def subscriber_thread():

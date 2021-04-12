@@ -52,5 +52,7 @@ class Interfaces():
         Return first non loopback interface address
         '''
         interfaces = self.all()
+        if self._stopped.is_set():
+            return '127.0.0.1'
         interfaces = [interface for interface in interfaces if interface['name'] != 'lo']
         return interfaces.pop()['address']
